@@ -8,6 +8,7 @@ import substituteResponsiveAtRules from '../lib/substituteResponsiveAtRules'
 import convertLayerAtRulesToControlComments from '../lib/convertLayerAtRulesToControlComments'
 import substituteScreenAtRules from '../lib/substituteScreenAtRules'
 import prefixSelector from '../util/prefixSelector'
+import { useMemo } from '../util/useMemo'
 
 function hasAtRule(css, atRule) {
   let foundAtRule = false
@@ -72,19 +73,16 @@ function generateRulesFromApply({ rule, utilityName: className, classPosition },
   return current
 }
 
-function extractUtilityNames(selector) {
-  const processor = selectorParser(selectors => {
-    let classes = []
+const extractUtilityNamesProcessor = selectorParser(selectors => {
+  let classes = []
+  selectors.walkClasses(c => classes.push(c.value))
+  return classes
+})
 
-    selectors.walkClasses(c => {
-      classes.push(c)
-    })
-
-    return classes.map(c => c.value)
-  })
-
-  return processor.transformSync(selector)
-}
+const extractUtilityNames = useMemo(
+  selector => extractUtilityNamesProcessor.transformSync(selector),
+  selector => selector
+)
 
 function buildUtilityMap(css) {
   let index = 0
